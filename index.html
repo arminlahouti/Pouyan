@@ -2,40 +2,52 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>پویان | مسیریاب</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --ink:#0c2d3a; --sea:#0f6e7c; --route:#e8590c; --paper:#f4f8fa; --line:#d3e0e6; --muted:#5b7480;
-  }
+  :root{--ink:#0c2d3a;--sea:#0f6e7c;--route:#e8590c;--paper:#f4f8fa;--line:#d3e0e6;--muted:#5b7480}
   *{box-sizing:border-box}
   html,body{height:100%;margin:0}
   body{font-family:'Vazirmatn',Tahoma,sans-serif;color:var(--ink);background:var(--paper)}
   #map{position:absolute;inset:0}
-  .top{position:absolute;z-index:1000;top:10px;right:10px;left:10px;display:flex;gap:8px;align-items:center}
+  .top{position:absolute;z-index:1000;top:max(10px,env(safe-area-inset-top));right:10px;left:10px;display:flex;gap:8px;align-items:center}
   .brand{background:var(--ink);color:#fff;font-weight:800;padding:10px 16px;border-radius:12px;font-size:18px;white-space:nowrap}
   .search{flex:1;display:flex;background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(12,45,58,.25);overflow:hidden}
   .search input{flex:1;border:0;padding:12px;font:inherit;font-size:15px;min-width:0;outline:none}
   .search button{border:0;background:var(--sea);color:#fff;font:inherit;padding:0 16px;cursor:pointer}
+  .navbar{display:none;position:absolute;z-index:1000;top:max(10px,env(safe-area-inset-top));right:10px;left:10px;
+    background:var(--ink);color:#fff;border-radius:16px;padding:14px 16px;box-shadow:0 3px 14px rgba(0,0,0,.35)}
+  .navbar .d{font-size:30px;font-weight:800;line-height:1.2}
+  .navbar .t{font-size:17px;margin-top:2px}
+  body.nav .navbar{display:block}
+  body.nav .top,body.nav #idleUI{display:none}
+  #navUI{display:none}
+  body.nav #navUI{display:block}
   .panel{position:absolute;z-index:1000;bottom:0;right:0;left:0;background:#fff;border-radius:18px 18px 0 0;
-    box-shadow:0 -4px 18px rgba(12,45,58,.22);padding:14px 16px 16px;max-height:55vh;overflow:auto}
+    box-shadow:0 -4px 18px rgba(12,45,58,.22);padding:14px 16px calc(16px + env(safe-area-inset-bottom));max-height:55vh;overflow:auto}
   @media(min-width:700px){.panel{width:380px;right:10px;left:auto;bottom:10px;border-radius:18px}}
   .hint{margin:0 0 10px;font-size:15px;color:var(--muted)}
   .sum{display:none;gap:18px;align-items:baseline;margin-bottom:10px}
   .sum b{font-size:26px;font-weight:800}
   .sum span{color:var(--muted);font-size:14px}
+  .stats{display:flex;gap:16px;align-items:baseline;margin-bottom:12px;flex-wrap:wrap}
+  .stats b{font-size:24px;font-weight:800}
+  .stats span{color:var(--muted);font-size:13px}
   .btns{display:flex;gap:8px;flex-wrap:wrap}
-  .btns button{flex:1;border:1px solid var(--line);background:var(--paper);color:var(--ink);font:inherit;
-    padding:10px;border-radius:10px;cursor:pointer;font-size:14px}
+  .btns button{flex:1;border:1px solid var(--line);background:var(--paper);color:var(--ink);font:inherit;padding:11px;border-radius:10px;cursor:pointer;font-size:14px}
   .btns button.main{background:var(--sea);border-color:var(--sea);color:#fff}
-  .btns button:focus-visible,.search button:focus-visible{outline:3px solid var(--route);outline-offset:2px}
+  .btns button.go{background:var(--route);border-color:var(--route);color:#fff;font-weight:600;flex-basis:100%;font-size:16px}
+  .btns button.stop{background:#b42318;border-color:#b42318;color:#fff;font-weight:600}
+  button:focus-visible{outline:3px solid var(--route);outline-offset:2px}
   ol.steps{list-style:none;margin:12px 0 0;padding:0;display:none}
   ol.steps li{padding:8px 0;border-top:1px solid var(--line);font-size:14px;display:flex;justify-content:space-between;gap:10px}
   ol.steps li span{color:var(--muted);white-space:nowrap}
   .pin{width:26px;height:26px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #fff;box-shadow:0 1px 6px rgba(0,0,0,.4)}
-  .pin.a{background:var(--sea)} .pin.b{background:var(--route)}
+  .pin.a{background:var(--sea)}.pin.b{background:var(--route)}
+  .me{width:30px;height:30px;border-radius:50%;background:#1a73e8;border:3px solid #fff;box-shadow:0 0 0 6px rgba(26,115,232,.25),0 1px 6px rgba(0,0,0,.5);position:relative}
+  .me:after{content:"";position:absolute;top:-12px;left:6px;border:6px solid transparent;border-bottom:10px solid #1a73e8;border-top:0}
   .err{color:#b42318}
 </style>
 </head>
@@ -50,126 +62,204 @@
   </form>
 </div>
 
+<div class="navbar" id="navbar"><div class="d" id="navD">...</div><div class="t" id="navT">در حال پیدا کردن موقعیت</div></div>
+
 <div class="panel">
-  <p class="hint" id="hint">روی نقشه بزن یا آدرس جستجو کن تا مبدأ مشخص شود.</p>
-  <div class="sum" id="sum"><b id="dist"></b><b id="time"></b><span>رانندگی</span></div>
-  <div class="btns">
-    <button class="main" id="locBtn" type="button">موقعیت من</button>
-    <button id="resetBtn" type="button">پاک کردن مسیر</button>
+  <div id="idleUI">
+    <p class="hint" id="hint">روی نقشه بزن یا آدرس جستجو کن تا مبدأ مشخص شود.</p>
+    <div class="sum" id="sum"><b id="dist"></b><b id="time"></b><span>رانندگی</span></div>
+    <div class="btns">
+      <button class="go" id="goBtn" type="button">شروع مسیریابی</button>
+      <button class="main" id="locBtn" type="button">موقعیت من</button>
+      <button id="resetBtn" type="button">پاک کردن مسیر</button>
+    </div>
+    <ol class="steps" id="steps"></ol>
   </div>
-  <ol class="steps" id="steps"></ol>
+  <div id="navUI">
+    <div class="stats">
+      <div><b id="remD">-</b> <span>مانده</span></div>
+      <div><b id="remT">-</b> <span>تا مقصد</span></div>
+      <div><b id="spd">۰</b> <span>کیلومتر بر ساعت</span></div>
+    </div>
+    <div class="btns"><button class="stop" id="stopBtn" type="button">پایان مسیریابی</button></div>
+  </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 const map = L.map('map', {zoomControl:false}).setView([35.6892, 51.389], 11);
 L.control.zoom({position:'topleft'}).addTo(map);
-L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom:19, attribution:'© OpenStreetMap'
-}).addTo(map);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19, attribution:'© OpenStreetMap'}).addTo(map);
 
-const hint = document.getElementById('hint');
-const sum = document.getElementById('sum');
-const stepsEl = document.getElementById('steps');
+const $ = id => document.getElementById(id);
 let pts = [], markers = [], routeLine = null;
+let R = null, dest = null, navigating = false, watchId = null, meMarker = null, wake = null;
+let routing = false, offCount = 0, lastReroute = 0;
 
 const fa = n => String(n).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
+const pin = cls => L.divIcon({className:'', html:'<div class="pin '+cls+'"></div>', iconSize:[26,26], iconAnchor:[4,26]});
+function setHint(t, e){ $('hint').textContent = t; $('hint').className = 'hint' + (e ? ' err' : ''); }
+function fmtDist(m){ return m >= 1000 ? fa((m/1000).toFixed(1)) + ' کیلومتر' : fa(Math.round(m/10)*10) + ' متر'; }
+function fmtTime(s){ const m = Math.max(1, Math.round(s/60)); return m < 60 ? fa(m) + ' دقیقه' : fa(Math.floor(m/60)) + ' ساعت و ' + fa(m%60) + ' دقیقه'; }
+function hav(a, b){
+  const r = Math.PI/180, dLat = (b[0]-a[0])*r, dLng = (b[1]-a[1])*r;
+  const x = Math.sin(dLat/2)**2 + Math.cos(a[0]*r)*Math.cos(b[0]*r)*Math.sin(dLng/2)**2;
+  return 12742000 * Math.asin(Math.sqrt(x));
+}
 
-function pin(cls){ return L.divIcon({className:'', html:'<div class="pin '+cls+'"></div>', iconSize:[26,26], iconAnchor:[4,26]}); }
-
-function setHint(t, isErr){ hint.textContent = t; hint.className = 'hint' + (isErr ? ' err' : ''); }
+const turnFa = {'left':'به چپ بپیچید','right':'به راست بپیچید','slight left':'کمی به چپ بپیچید','slight right':'کمی به راست بپیچید',
+  'sharp left':'کاملاً به چپ بپیچید','sharp right':'کاملاً به راست بپیچید','uturn':'دور بزنید','straight':'مستقیم ادامه دهید'};
+function stepText(s){
+  const m = s.maneuver, name = s.name ? ' در ' + s.name : '';
+  if(m.type === 'depart') return 'حرکت کنید' + name;
+  if(m.type === 'arrive') return 'به مقصد می‌رسید';
+  if(m.type === 'roundabout' || m.type === 'rotary') return 'وارد میدان شوید' + name;
+  return (turnFa[m.modifier || 'straight'] || 'ادامه دهید') + name;
+}
 
 function addPoint(ll){
   if(pts.length >= 2) resetAll();
   pts.push(ll);
   markers.push(L.marker(ll, {icon: pin(pts.length === 1 ? 'a' : 'b')}).addTo(map));
-  if(pts.length === 1){ setHint('مبدأ ثبت شد. حالا مقصد را انتخاب کن.'); }
-  else { setHint('در حال پیدا کردن مسیر...'); getRoute(); }
+  if(pts.length === 1) setHint('مبدأ ثبت شد. حالا مقصد را انتخاب کن. (یا برای مسیریابی از موقعیت فعلی، «شروع مسیریابی» را بزن.)');
+  else { setHint('در حال پیدا کردن مسیر...'); previewRoute(); }
 }
-
 function resetAll(){
-  pts = [];
-  markers.forEach(m => map.removeLayer(m)); markers = [];
+  pts = []; markers.forEach(m => map.removeLayer(m)); markers = [];
   if(routeLine){ map.removeLayer(routeLine); routeLine = null; }
-  sum.style.display = 'none'; stepsEl.style.display = 'none'; stepsEl.innerHTML = '';
+  R = null; $('sum').style.display = 'none'; $('steps').style.display = 'none'; $('steps').innerHTML = '';
   setHint('روی نقشه بزن یا آدرس جستجو کن تا مبدأ مشخص شود.');
 }
 
-const turnFa = {
-  'turn left':'به چپ بپیچید','turn right':'به راست بپیچید',
-  'slight left':'کمی به چپ','slight right':'کمی به راست',
-  'sharp left':'کاملاً به چپ','sharp right':'کاملاً به راست',
-  'uturn':'دور بزنید','straight':'مستقیم بروید'
-};
-function stepText(s){
-  const m = s.maneuver, name = s.name ? ' در ' + s.name : '';
-  if(m.type === 'depart') return 'حرکت کنید' + name;
-  if(m.type === 'arrive') return 'به مقصد رسیدید';
-  if(m.type === 'roundabout' || m.type === 'rotary') return 'وارد میدان شوید' + name;
-  const key = (m.modifier || 'straight');
-  const base = turnFa[m.type === 'turn' ? 'turn ' + key.replace('slight ','').replace('sharp ','') : key] || turnFa[key] || 'ادامه دهید';
-  return (turnFa[key] || base) + name;
+async function fetchRoute(a, b){
+  const url = `https://router.project-osrm.org/route/v1/driving/${a[1]},${a[0]};${b[1]},${b[0]}?overview=full&geometries=geojson&steps=true`;
+  const d = await (await fetch(url)).json();
+  if(d.code !== 'Ok') throw new Error('no route');
+  const r = d.routes[0];
+  const coords = r.geometry.coordinates.map(c => [c[1], c[0]]);
+  const cum = [0];
+  for(let i = 1; i < coords.length; i++) cum.push(cum[i-1] + hav(coords[i-1], coords[i]));
+  const steps = r.legs[0].steps, ends = []; let acc = 0;
+  steps.forEach(s => { acc += s.distance; ends.push(acc); });
+  return {coords, cum, steps, ends, dist: r.distance, dur: r.duration};
 }
-function fmtDist(m){ return m >= 1000 ? fa((m/1000).toFixed(1)) + ' کیلومتر' : fa(Math.round(m)) + ' متر'; }
-function fmtTime(s){
-  const mins = Math.round(s/60);
-  if(mins < 60) return fa(mins) + ' دقیقه';
-  return fa(Math.floor(mins/60)) + ' ساعت و ' + fa(mins%60) + ' دقیقه';
+function drawRoute(){
+  if(routeLine) map.removeLayer(routeLine);
+  routeLine = L.polyline(R.coords, {color:'#e8590c', weight:6, opacity:.9}).addTo(map);
 }
 
-async function getRoute(){
-  const [a,b] = pts;
-  const url = `https://router.project-osrm.org/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=geojson&steps=true`;
+async function previewRoute(){
   try{
-    const r = await fetch(url);
-    const d = await r.json();
-    if(d.code !== 'Ok') throw new Error('no route');
-    const route = d.routes[0];
-    routeLine = L.geoJSON(route.geometry, {style:{color:'#e8590c', weight:6, opacity:.9}}).addTo(map);
-    map.fitBounds(routeLine.getBounds(), {padding:[60,60]});
-    document.getElementById('dist').textContent = fmtDist(route.distance);
-    document.getElementById('time').textContent = fmtTime(route.duration);
-    sum.style.display = 'flex';
-    setHint('مسیر آماده است. برای مسیر جدید، دوباره روی نقشه بزن.');
-    stepsEl.innerHTML = route.legs[0].steps.map(s =>
-      `<li>${stepText(s)}<span>${fmtDist(s.distance)}</span></li>`).join('');
-    stepsEl.style.display = 'block';
-  }catch(e){
-    setHint('مسیر پیدا نشد. اینترنت یا فیلترشکن را بررسی کن یا نقطه‌ی دیگری انتخاب کن.', true);
-  }
+    R = await fetchRoute([pts[0].lat, pts[0].lng], [pts[1].lat, pts[1].lng]);
+    drawRoute(); map.fitBounds(routeLine.getBounds(), {padding:[60,60]});
+    $('dist').textContent = fmtDist(R.dist); $('time').textContent = fmtTime(R.dur); $('sum').style.display = 'flex';
+    setHint('مسیر آماده است. برای راهنمای زنده «شروع مسیریابی» را بزن.');
+    $('steps').innerHTML = R.steps.map(s => `<li>${stepText(s)}<span>${fmtDist(s.distance)}</span></li>`).join('');
+    $('steps').style.display = 'block';
+  }catch(e){ setHint('مسیر پیدا نشد. اینترنت یا فیلترشکن را بررسی کن یا نقطه‌ی دیگری انتخاب کن.', true); }
 }
 
-map.on('click', e => addPoint(e.latlng));
+/* ---------- مسیریابی زنده ---------- */
+async function requestWake(){
+  try{ if('wakeLock' in navigator) wake = await navigator.wakeLock.request('screen'); }catch(e){}
+}
+function startNav(){
+  if(!pts.length){ setHint('اول مقصد را روی نقشه انتخاب کن یا جستجو کن.', true); return; }
+  if(!navigator.geolocation){ setHint('مرورگر شما موقعیت‌یابی را پشتیبانی نمی‌کند.', true); return; }
+  const last = pts[pts.length-1];
+  dest = [last.lat, last.lng];
+  navigating = true; R = null; offCount = 0;
+  document.body.classList.add('nav');
+  $('navD').textContent = '...'; $('navT').textContent = 'در حال پیدا کردن موقعیت';
+  requestWake();
+  watchId = navigator.geolocation.watchPosition(onFix, onErr, {enableHighAccuracy:true, maximumAge:1000, timeout:20000});
+}
+function stopNav(){
+  navigating = false;
+  if(watchId !== null){ navigator.geolocation.clearWatch(watchId); watchId = null; }
+  if(wake){ try{ wake.release(); }catch(e){} wake = null; }
+  if(meMarker){ map.removeLayer(meMarker); meMarker = null; }
+  document.body.classList.remove('nav');
+}
+function onErr(){
+  $('navD').textContent = 'موقعیت پیدا نشد';
+  $('navT').textContent = 'اجازه‌ی موقعیت مرورگر را فعال کن';
+}
+async function buildNavRoute(from){
+  routing = true;
+  try{ R = await fetchRoute(from, dest); drawRoute(); lastReroute = Date.now(); }
+  catch(e){ $('navT').textContent = 'مسیر پیدا نشد. اینترنت را بررسی کن.'; }
+  routing = false;
+}
+function snap(ll){
+  let bi = 0, bd = Infinity;
+  for(let i = 0; i < R.coords.length; i++){
+    const d = hav(ll, R.coords[i]);
+    if(d < bd){ bd = d; bi = i; }
+  }
+  return {i: bi, d: bd};
+}
+function onFix(p){
+  if(!navigating) return;
+  const ll = [p.coords.latitude, p.coords.longitude];
+  if(!meMarker) meMarker = L.marker(ll, {icon: L.divIcon({className:'', html:'<div class="me"></div>', iconSize:[30,30], iconAnchor:[15,15]}), zIndexOffset:1000}).addTo(map);
+  meMarker.setLatLng(ll);
+  const h = p.coords.heading;
+  if(h !== null && !isNaN(h) && meMarker.getElement()) meMarker.getElement().firstChild.style.transform = `rotate(${h}deg)`;
+  map.setView(ll, Math.max(map.getZoom(), 16), {animate:true});
+  $('spd').textContent = fa(Math.round((p.coords.speed || 0) * 3.6));
 
-document.getElementById('resetBtn').onclick = resetAll;
+  if(hav(ll, dest) < 30){
+    $('navD').textContent = 'به مقصد رسیدید 🎉'; $('navT').textContent = '';
+    setTimeout(stopNav, 4000); return;
+  }
+  if(!R){ if(!routing) buildNavRoute(ll); return; }
 
-document.getElementById('locBtn').onclick = () => {
+  const s = snap(ll);
+  if(s.d > 60){
+    offCount++;
+    if(offCount >= 3 && !routing && Date.now() - lastReroute > 10000){
+      offCount = 0; $('navT').textContent = 'در حال پیدا کردن مسیر جدید...'; buildNavRoute(ll);
+    }
+  } else offCount = 0;
+
+  const total = R.cum[R.cum.length-1], progress = R.cum[s.i], remain = Math.max(0, total - progress);
+  $('remD').textContent = fmtDist(remain);
+  $('remT').textContent = fmtTime(remain / total * R.dur);
+
+  let k = R.ends.findIndex(e => e > progress);
+  if(k < 0) k = R.ends.length - 1;
+  const next = R.steps[k+1];
+  const toTurn = Math.max(0, R.ends[k] - progress);
+  if(next){ $('navD').textContent = fmtDist(toTurn); $('navT').textContent = stepText(next); }
+  else { $('navD').textContent = fmtDist(remain); $('navT').textContent = 'تا مقصد مستقیم ادامه دهید'; }
+}
+
+map.on('click', e => { if(!navigating) addPoint(e.latlng); });
+$('resetBtn').onclick = resetAll;
+$('goBtn').onclick = startNav;
+$('stopBtn').onclick = stopNav;
+
+$('locBtn').onclick = () => {
   if(!navigator.geolocation){ setHint('مرورگر شما موقعیت‌یابی را پشتیبانی نمی‌کند.', true); return; }
   setHint('در حال پیدا کردن موقعیت شما...');
   navigator.geolocation.getCurrentPosition(p => {
     const ll = L.latLng(p.coords.latitude, p.coords.longitude);
     if(pts.length >= 2) resetAll();
-    if(pts.length === 0){ map.setView(ll, 15); addPoint(ll); }
-    else { map.setView(ll, 15); addPoint(ll); }
-  }, () => setHint('اجازه‌ی موقعیت داده نشد. در تنظیمات مرورگر اجازه را فعال کن.', true),
-  {enableHighAccuracy:true, timeout:15000});
+    map.setView(ll, 15); addPoint(ll);
+  }, () => setHint('اجازه‌ی موقعیت داده نشد. در تنظیمات مرورگر اجازه را فعال کن.', true), {enableHighAccuracy:true, timeout:15000});
 };
 
-document.getElementById('searchForm').onsubmit = async e => {
+$('searchForm').onsubmit = async e => {
   e.preventDefault();
-  const q = document.getElementById('q').value.trim();
-  if(!q) return;
+  const q = $('q').value.trim(); if(!q) return;
   setHint('در حال جستجو...');
   try{
-    const r = await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=fa&q=' + encodeURIComponent(q));
-    const d = await r.json();
+    const d = await (await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=fa&q=' + encodeURIComponent(q))).json();
     if(!d.length){ setHint('جایی با این نام پیدا نشد. عبارت دیگری امتحان کن.', true); return; }
     const ll = L.latLng(+d[0].lat, +d[0].lon);
-    map.setView(ll, 15);
-    addPoint(ll);
-  }catch(err){
-    setHint('جستجو انجام نشد. اینترنت یا فیلترشکن را بررسی کن.', true);
-  }
+    map.setView(ll, 15); addPoint(ll);
+  }catch(err){ setHint('جستجو انجام نشد. اینترنت یا فیلترشکن را بررسی کن.', true); }
 };
 </script>
 </body>
