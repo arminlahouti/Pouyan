@@ -4,38 +4,50 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>پویان | مسیریاب</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230f6e7c'/%3E%3Cpath d='M32 12 48 50 32 41 16 50Z' fill='white'/%3E%3Ccircle cx='32' cy='35' r='5' fill='%23e8590c'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
-  :root{--ink:#0c2d3a;--sea:#0f6e7c;--route:#e8590c;--paper:#f4f8fa;--line:#d3e0e6;--muted:#5b7480}
+  :root{--ink:#0c2d3a;--sea:#0f6e7c;--route:#e8590c;--paper:#f4f8fa;--line:#d3e0e6;--muted:#5b7480;--sat:max(10px,env(safe-area-inset-top))}
   *{box-sizing:border-box}
   html,body{height:100%;margin:0}
   body{font-family:'Vazirmatn',Tahoma,sans-serif;color:var(--ink);background:var(--paper)}
   #map{position:absolute;inset:0}
-  .maplibregl-ctrl-top-left{top:max(64px,calc(env(safe-area-inset-top) + 54px))}
+  .maplibregl-ctrl-top-left{top:calc(var(--sat) + 100px)}
   body.nav .maplibregl-ctrl-top-left{display:none}
-  .top{position:absolute;z-index:10;top:max(10px,env(safe-area-inset-top));right:10px;left:10px;display:flex;gap:8px;align-items:center}
-  .brand{background:var(--ink);color:#fff;font-weight:800;padding:10px 16px;border-radius:12px;font-size:18px;white-space:nowrap}
+  .top{position:absolute;z-index:10;top:var(--sat);right:10px;left:10px;display:flex;gap:8px;align-items:center}
+  .brand{background:linear-gradient(135deg,#0f6e7c,#0c2d3a);color:#fff;font-weight:800;padding:7px 14px 7px 12px;border-radius:14px;font-size:18px;white-space:nowrap;display:flex;gap:8px;align-items:center;box-shadow:0 2px 10px rgba(12,45,58,.3)}
   .search{flex:1;display:flex;background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(12,45,58,.25);overflow:hidden}
   .search input{flex:1;border:0;padding:12px;font:inherit;font-size:15px;min-width:0;outline:none}
   .search button{border:0;background:var(--sea);color:#fff;font:inherit;padding:0 16px;cursor:pointer}
-  .navbar{display:none;position:absolute;z-index:10;top:max(10px,env(safe-area-inset-top));right:10px;left:10px;
-    background:var(--ink);color:#fff;border-radius:16px;padding:14px 16px;box-shadow:0 3px 14px rgba(0,0,0,.35)}
+  .navbar{display:none;position:absolute;z-index:10;top:var(--sat);right:10px;left:10px;background:var(--ink);color:#fff;border-radius:16px;padding:12px 16px;box-shadow:0 3px 14px rgba(0,0,0,.35)}
   .navbar .d{font-size:30px;font-weight:800;line-height:1.2}
   .navbar .t{font-size:17px;margin-top:2px}
+  .navbar .v{position:absolute;left:12px;top:12px;border:1px solid rgba(255,255,255,.35);background:transparent;color:#fff;font:inherit;font-size:13px;padding:5px 10px;border-radius:20px;cursor:pointer}
   body.nav .navbar{display:block}
   body.nav .top,body.nav #idleUI{display:none}
   #navUI{display:none}
   body.nav #navUI{display:block}
-  .panel{position:absolute;z-index:10;bottom:0;right:0;left:0;background:#fff;border-radius:18px 18px 0 0;
-    box-shadow:0 -4px 18px rgba(12,45,58,.22);padding:14px 16px calc(16px + env(safe-area-inset-bottom));max-height:55vh;overflow:auto}
+  .lyr{position:absolute;z-index:10;right:10px;top:calc(var(--sat) + 58px)}
+  body.nav .lyr{top:calc(var(--sat) + 112px)}
+  .lyr>button{width:46px;height:46px;border-radius:12px;border:0;background:#fff;box-shadow:0 2px 10px rgba(12,45,58,.3);font-size:22px;cursor:pointer}
+  .lyr .menu{display:none;position:absolute;right:0;top:52px;background:#fff;border-radius:12px;box-shadow:0 3px 14px rgba(12,45,58,.3);padding:6px;min-width:130px}
+  .lyr .menu.open{display:block}
+  .lyr .menu button{display:block;width:100%;border:0;background:none;font:inherit;font-size:15px;padding:10px 12px;text-align:right;border-radius:8px;cursor:pointer;color:var(--ink)}
+  .lyr .menu button.on{background:var(--paper);font-weight:800;color:var(--sea)}
+  .spdb{display:none;position:absolute;z-index:10;left:10px;top:calc(var(--sat) + 112px);width:72px;height:72px;border-radius:50%;background:#fff;border:5px solid var(--ink);
+    flex-direction:column;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,.35)}
+  .spdb b{font-size:26px;font-weight:800;line-height:1}
+  .spdb span{font-size:11px;color:var(--muted);margin-top:2px}
+  body.nav .spdb{display:flex}
+  .panel{position:absolute;z-index:10;bottom:0;right:0;left:0;background:#fff;border-radius:18px 18px 0 0;box-shadow:0 -4px 18px rgba(12,45,58,.22);padding:14px 16px calc(16px + env(safe-area-inset-bottom));max-height:55vh;overflow:auto}
   @media(min-width:700px){.panel{width:380px;right:10px;left:auto;bottom:10px;border-radius:18px}}
   .hint{margin:0 0 10px;font-size:15px;color:var(--muted)}
   .sum{display:none;gap:18px;align-items:baseline;margin-bottom:10px}
   .sum b{font-size:26px;font-weight:800}
   .sum span{color:var(--muted);font-size:14px}
-  .stats{display:flex;gap:16px;align-items:baseline;margin-bottom:12px;flex-wrap:wrap}
-  .stats b{font-size:24px;font-weight:800}
+  .stats{display:flex;gap:18px;align-items:baseline;margin-bottom:12px;flex-wrap:wrap}
+  .stats b{font-size:22px;font-weight:800}
   .stats span{color:var(--muted);font-size:13px}
   .btns{display:flex;gap:8px;flex-wrap:wrap}
   .btns button{flex:1;border:1px solid var(--line);background:var(--paper);color:var(--ink);font:inherit;padding:11px;border-radius:10px;cursor:pointer;font-size:14px}
@@ -53,20 +65,43 @@
   .me{width:34px;height:34px;border-radius:50%;background:#1a73e8;border:3px solid #fff;box-shadow:0 0 0 7px rgba(26,115,232,.25),0 2px 8px rgba(0,0,0,.5);position:relative}
   .me:after{content:"";position:absolute;top:-14px;left:5px;border:8px solid transparent;border-bottom:13px solid #1a73e8;border-top:0}
   .err{color:#b42318}
+  #splash{position:fixed;inset:0;z-index:100;background:linear-gradient(160deg,#0f6e7c,#0c2d3a);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .6s}
+  #splash.hide{opacity:0;pointer-events:none}
+  #splash h1{font-size:40px;font-weight:800;margin:14px 0 2px}
+  #splash p{margin:0;opacity:.8;font-size:16px}
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="logo" viewBox="0 0 64 64">
+  <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#16a0b3"/><stop offset="1" stop-color="#0c2d3a"/></linearGradient></defs>
+  <rect width="64" height="64" rx="16" fill="url(#lg)"/>
+  <path d="M32 11 49 51 32 42 15 51Z" fill="#fff"/>
+  <circle cx="32" cy="35" r="5.5" fill="#e8590c"/>
+</symbol></svg>
+
+<div id="splash"><svg width="104" height="104"><use href="#logo"/></svg><h1>پویان</h1><p>مسیریاب هوشمند</p></div>
+
 <div id="map"></div>
 
 <div class="top">
-  <div class="brand">پویان</div>
+  <div class="brand"><svg width="28" height="28"><use href="#logo"/></svg><span>پویان</span></div>
   <form class="search" id="searchForm">
     <input id="q" type="search" placeholder="جستجوی آدرس یا مکان" aria-label="جستجوی آدرس">
     <button type="submit">جستجو</button>
   </form>
 </div>
 
-<div class="navbar" id="navbar"><div class="d" id="navD">...</div><div class="t" id="navT">در حال پیدا کردن موقعیت</div></div>
+<div class="lyr">
+  <button id="lyrBtn" type="button" aria-label="تغییر نقشه">🗺️</button>
+  <div class="menu" id="lyrMenu">
+    <button data-s="osm" class="on" type="button">استاندارد</button>
+    <button data-s="sat" type="button">ماهواره</button>
+    <button data-s="dark" type="button">شب</button>
+  </div>
+</div>
+
+<div class="navbar" id="navbar"><button class="v" id="voiceBtn" type="button">🔊 صدا</button><div class="d" id="navD">...</div><div class="t" id="navT">در حال پیدا کردن موقعیت</div></div>
+<div class="spdb" id="spdBadge"><b id="spdB">۰</b><span>km/h</span></div>
 
 <div class="panel">
   <div id="idleUI">
@@ -83,7 +118,7 @@
     <div class="stats">
       <div><b id="remD">-</b> <span>مانده</span></div>
       <div><b id="remT">-</b> <span>تا مقصد</span></div>
-      <div><b id="spd">۰</b> <span>کیلومتر بر ساعت</span></div>
+      <div><b id="eta">-</b> <span>ساعت رسیدن</span></div>
     </div>
     <div class="btns">
       <button class="rc" id="rcBtn" type="button" hidden>بازگشت به موقعیت من</button>
@@ -96,19 +131,53 @@
   onerror="document.getElementById('hint').textContent='نقشه بارگذاری نشد. فیلترشکن را روشن کن و صفحه را رفرش کن.'"></script>
 <script>
 const $ = id => document.getElementById(id);
-const map = new maplibregl.Map({
-  container: 'map',
-  center: [51.389, 35.6892], zoom: 11,
-  style: {version: 8,
-    sources: {osm: {type: 'raster', tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'], tileSize: 256, maxzoom: 19, attribution: '© OpenStreetMap'}},
-    layers: [{id: 'osm', type: 'raster', source: 'osm'}]}
+setTimeout(() => { $('splash').classList.add('hide'); setTimeout(() => $('splash').remove(), 700); }, 1500);
+
+/* ---------- نقشه و سبک‌ها ---------- */
+const STYLES = {
+  osm:  {tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'], attr: '© OpenStreetMap'},
+  sat:  {tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'], attr: 'Esri'},
+  dark: {tiles: ['a','b','c'].map(s => `https://${s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png`), attr: '© OpenStreetMap © CARTO'}
+};
+let curStyle = 'osm';
+try{ const s = localStorage.getItem('pouyan-style'); if(STYLES[s]) curStyle = s; }catch(e){}
+const sources = {}, layers = [];
+Object.keys(STYLES).forEach(k => {
+  sources[k] = {type: 'raster', tiles: STYLES[k].tiles, tileSize: 256, maxzoom: 19, attribution: STYLES[k].attr};
+  layers.push({id: 'base-' + k, type: 'raster', source: k, layout: {visibility: k === curStyle ? 'visible' : 'none'}});
 });
+const map = new maplibregl.Map({container: 'map', center: [51.389, 35.6892], zoom: 11, style: {version: 8, sources, layers}});
 map.addControl(new maplibregl.NavigationControl({showCompass: false}), 'top-left');
 let mapReady = false; map.on('load', () => mapReady = true);
 
+function setStyle(k){
+  Object.keys(STYLES).forEach(s => map.setLayoutProperty('base-' + s, 'visibility', s === k ? 'visible' : 'none'));
+  document.querySelectorAll('#lyrMenu button').forEach(b => b.classList.toggle('on', b.dataset.s === k));
+  try{ localStorage.setItem('pouyan-style', k); }catch(e){}
+}
+document.querySelectorAll('#lyrMenu button').forEach(b => b.onclick = () => { setStyle(b.dataset.s); $('lyrMenu').classList.remove('open'); });
+$('lyrBtn').onclick = () => $('lyrMenu').classList.toggle('open');
+map.on('load', () => setStyle(curStyle));
+
+/* ---------- گفتار فارسی ---------- */
+let voiceOn = true, fvoice = null;
+const hasTTS = 'speechSynthesis' in window;
+function pickVoice(){ if(!hasTTS) return; fvoice = speechSynthesis.getVoices().find(v => /^fa/i.test(v.lang)) || null; }
+if(hasTTS){ pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+function say(t){
+  if(!voiceOn || !hasTTS || !fvoice) return;
+  const u = new SpeechSynthesisUtterance(t); u.lang = 'fa-IR'; u.voice = fvoice; u.rate = 0.95;
+  speechSynthesis.cancel(); speechSynthesis.speak(u);
+}
+$('voiceBtn').onclick = () => {
+  voiceOn = !voiceOn; $('voiceBtn').textContent = voiceOn ? '🔊 صدا' : '🔇 بی‌صدا';
+  if(!voiceOn && hasTTS) speechSynthesis.cancel();
+};
+
+/* ---------- ابزارها ---------- */
 let pts = [], markers = [], R = null, dest = null;
 let navigating = false, watchId = null, meMarker = null, wake = null, follow = true;
-let routing = false, offCount = 0, lastReroute = 0, lastHd = null, lastLL = null;
+let routing = false, offCount = 0, lastReroute = 0, lastHd = null, lastLL = null, spoken = {k: -1, s: -1};
 
 const fa = n => String(n).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
 function pinEl(cls){ const o = document.createElement('div'); o.innerHTML = '<div class="pin ' + cls + '"></div>'; o.style.width = o.style.height = '26px'; return o; }
@@ -126,7 +195,6 @@ function bearing(a, b){
   const x = Math.cos(a[0]*r)*Math.sin(b[0]*r) - Math.sin(a[0]*r)*Math.cos(b[0]*r)*Math.cos(dl);
   return (Math.atan2(y, x)/r + 360) % 360;
 }
-
 const turnFa = {'left':'به چپ بپیچید','right':'به راست بپیچید','slight left':'کمی به چپ بپیچید','slight right':'کمی به راست بپیچید',
   'sharp left':'کاملاً به چپ بپیچید','sharp right':'کاملاً به راست بپیچید','uturn':'دور بزنید','straight':'مستقیم ادامه دهید'};
 function stepText(s){
@@ -150,7 +218,6 @@ function resetAll(){
   clearRoute(); R = null; $('sum').style.display = 'none'; $('steps').style.display = 'none'; $('steps').innerHTML = '';
   setHint('روی نقشه بزن یا آدرس جستجو کن تا مبدأ مشخص شود.');
 }
-
 async function fetchRoute(a, b){
   const url = `https://router.project-osrm.org/route/v1/driving/${a[1]},${a[0]};${b[1]},${b[0]}?overview=full&geometries=geojson&steps=true`;
   const d = await (await fetch(url)).json();
@@ -173,7 +240,6 @@ function drawRoute(){
   };
   mapReady ? put() : map.once('load', put);
 }
-
 async function previewRoute(){
   try{
     R = await fetchRoute([pts[0].lat, pts[0].lng], [pts[1].lat, pts[1].lng]);
@@ -200,10 +266,12 @@ function startNav(){
   if(!navigator.geolocation){ setHint('مرورگر شما موقعیت‌یابی را پشتیبانی نمی‌کند.', true); return; }
   const last = pts[pts.length-1];
   dest = [last.lat, last.lng];
-  navigating = true; follow = true; R = null; offCount = 0; lastHd = null; lastLL = null;
+  navigating = true; follow = true; R = null; offCount = 0; lastHd = null; lastLL = null; spoken = {k: -1, s: -1};
   $('rcBtn').hidden = true;
   document.body.classList.add('nav');
-  $('navD').textContent = '...'; $('navT').textContent = 'در حال پیدا کردن موقعیت';
+  $('navD').textContent = '...';
+  $('navT').textContent = (hasTTS && !fvoice) ? 'صدای فارسی روی این گوشی پیدا نشد' : 'در حال پیدا کردن موقعیت';
+  pickVoice(); say('مسیریابی آغاز شد');
   requestWake();
   watchId = navigator.geolocation.watchPosition(onFix, onErr, {enableHighAccuracy: true, maximumAge: 1000, timeout: 20000});
 }
@@ -212,6 +280,7 @@ function stopNav(){
   if(watchId !== null){ navigator.geolocation.clearWatch(watchId); watchId = null; }
   if(wake){ try{ wake.release(); }catch(e){} wake = null; }
   if(meMarker){ meMarker.remove(); meMarker = null; }
+  if(hasTTS) speechSynthesis.cancel();
   document.body.classList.remove('nav');
   map.easeTo({pitch: 0, bearing: 0, padding: {top: 0, bottom: 0, left: 0, right: 0}, duration: 700});
 }
@@ -219,21 +288,28 @@ function onErr(){
   $('navD').textContent = 'موقعیت پیدا نشد';
   $('navT').textContent = 'اجازه‌ی موقعیت مرورگر را فعال کن';
 }
-async function buildNavRoute(from){
+async function buildNavRoute(from, isReroute){
   routing = true;
   try{
-    R = await fetchRoute(from, dest); drawRoute(); lastReroute = Date.now();
+    R = await fetchRoute(from, dest); drawRoute(); lastReroute = Date.now(); spoken = {k: -1, s: -1};
     if(lastHd === null) lastHd = bearing(R.coords[0], R.coords[Math.min(10, R.coords.length-1)]);
+    if(isReroute) say('مسیر جدید');
   }catch(e){ $('navT').textContent = 'مسیر پیدا نشد. اینترنت را بررسی کن.'; }
   routing = false;
 }
 function snap(ll){
   let bi = 0, bd = Infinity;
-  for(let i = 0; i < R.coords.length; i++){
-    const d = hav(ll, R.coords[i]);
-    if(d < bd){ bd = d; bi = i; }
-  }
+  for(let i = 0; i < R.coords.length; i++){ const d = hav(ll, R.coords[i]); if(d < bd){ bd = d; bi = i; } }
   return {i: bi, d: bd};
+}
+const TH = [500, 200, 50];
+function announce(k, toTurn, text){
+  if(spoken.k !== k) spoken = {k, s: -1};
+  let idx = -1; TH.forEach((d, i) => { if(toTurn <= d) idx = i; });
+  if(idx > spoken.s){
+    spoken.s = idx;
+    say(idx === 2 ? 'اکنون، ' + text : fa(Math.max(50, Math.round(toTurn/50)*50)) + ' متر دیگر، ' + text);
+  }
 }
 function onFix(p){
   if(!navigating) return;
@@ -247,42 +323,43 @@ function onFix(p){
   let hd = p.coords.heading;
   if(hd === null || isNaN(hd) || (speed !== null && speed < 1)){
     hd = lastHd;
-    if(lastLL && hav(lastLL, ll) > 6){ hd = bearing(lastLL, ll); }
+    if(lastLL && hav(lastLL, ll) > 6) hd = bearing(lastLL, ll);
   }
   if(!lastLL || hav(lastLL, ll) > 6) lastLL = ll;
   if(hd !== null) lastHd = hd;
-  $('spd').textContent = fa(Math.round((speed || 0) * 3.6));
+  $('spdB').textContent = fa(Math.round((speed || 0) * 3.6));
   if(follow) camera(ll, lastHd, 900);
 
   if(hav(ll, dest) < 30){
-    $('navD').textContent = 'به مقصد رسیدید 🎉'; $('navT').textContent = '';
-    setTimeout(stopNav, 4000); return;
+    $('navD').textContent = 'به مقصد رسیدید 🎉'; $('navT').textContent = ''; say('به مقصد رسیدید');
+    setTimeout(stopNav, 5000); return;
   }
-  if(!R){ if(!routing) buildNavRoute(ll); return; }
+  if(!R){ if(!routing) buildNavRoute(ll, false); return; }
 
   const s = snap(ll);
   if(s.d > 60){
     offCount++;
     if(offCount >= 3 && !routing && Date.now() - lastReroute > 10000){
-      offCount = 0; $('navT').textContent = 'در حال پیدا کردن مسیر جدید...'; buildNavRoute(ll);
+      offCount = 0; $('navT').textContent = 'در حال پیدا کردن مسیر جدید...'; buildNavRoute(ll, true);
     }
   } else offCount = 0;
 
   const total = R.cum[R.cum.length-1], progress = R.cum[s.i], remain = Math.max(0, total - progress);
+  const secs = remain / total * R.dur, arr = new Date(Date.now() + secs * 1000);
   $('remD').textContent = fmtDist(remain);
-  $('remT').textContent = fmtTime(remain / total * R.dur);
+  $('remT').textContent = fmtTime(secs);
+  $('eta').textContent = fa(String(arr.getHours()).padStart(2, '0') + ':' + String(arr.getMinutes()).padStart(2, '0'));
 
   let k = R.ends.findIndex(e => e > progress);
   if(k < 0) k = R.ends.length - 1;
   const next = R.steps[k+1], toTurn = Math.max(0, R.ends[k] - progress);
-  if(next){ $('navD').textContent = fmtDist(toTurn); $('navT').textContent = stepText(next); }
+  if(next){ const t = stepText(next); $('navD').textContent = fmtDist(toTurn); $('navT').textContent = t; announce(k, toTurn, t); }
   else { $('navD').textContent = fmtDist(remain); $('navT').textContent = 'تا مقصد مستقیم ادامه دهید'; }
 }
 
 map.on('dragstart', e => { if(navigating && e.originalEvent){ follow = false; $('rcBtn').hidden = false; } });
 $('rcBtn').onclick = () => { follow = true; $('rcBtn').hidden = true; if(lastLL) camera(lastLL, lastHd, 600); };
-
-map.on('click', e => { if(!navigating) addPoint(e.lngLat); });
+map.on('click', e => { $('lyrMenu').classList.remove('open'); if(!navigating) addPoint(e.lngLat); });
 $('resetBtn').onclick = resetAll;
 $('goBtn').onclick = startNav;
 $('stopBtn').onclick = stopNav;
@@ -296,7 +373,6 @@ $('locBtn').onclick = () => {
     addPoint({lat: p.coords.latitude, lng: p.coords.longitude});
   }, () => setHint('اجازه‌ی موقعیت داده نشد. در تنظیمات مرورگر اجازه را فعال کن.', true), {enableHighAccuracy: true, timeout: 15000});
 };
-
 $('searchForm').onsubmit = async e => {
   e.preventDefault();
   const q = $('q').value.trim(); if(!q) return;
