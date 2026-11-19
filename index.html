@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>پویان | مسیریاب</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
   :root{--ink:#0c2d3a;--sea:#0f6e7c;--route:#e8590c;--paper:#f4f8fa;--line:#d3e0e6;--muted:#5b7480}
@@ -12,12 +12,14 @@
   html,body{height:100%;margin:0}
   body{font-family:'Vazirmatn',Tahoma,sans-serif;color:var(--ink);background:var(--paper)}
   #map{position:absolute;inset:0}
-  .top{position:absolute;z-index:1000;top:max(10px,env(safe-area-inset-top));right:10px;left:10px;display:flex;gap:8px;align-items:center}
+  .maplibregl-ctrl-top-left{top:max(64px,calc(env(safe-area-inset-top) + 54px))}
+  body.nav .maplibregl-ctrl-top-left{display:none}
+  .top{position:absolute;z-index:10;top:max(10px,env(safe-area-inset-top));right:10px;left:10px;display:flex;gap:8px;align-items:center}
   .brand{background:var(--ink);color:#fff;font-weight:800;padding:10px 16px;border-radius:12px;font-size:18px;white-space:nowrap}
   .search{flex:1;display:flex;background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(12,45,58,.25);overflow:hidden}
   .search input{flex:1;border:0;padding:12px;font:inherit;font-size:15px;min-width:0;outline:none}
   .search button{border:0;background:var(--sea);color:#fff;font:inherit;padding:0 16px;cursor:pointer}
-  .navbar{display:none;position:absolute;z-index:1000;top:max(10px,env(safe-area-inset-top));right:10px;left:10px;
+  .navbar{display:none;position:absolute;z-index:10;top:max(10px,env(safe-area-inset-top));right:10px;left:10px;
     background:var(--ink);color:#fff;border-radius:16px;padding:14px 16px;box-shadow:0 3px 14px rgba(0,0,0,.35)}
   .navbar .d{font-size:30px;font-weight:800;line-height:1.2}
   .navbar .t{font-size:17px;margin-top:2px}
@@ -25,7 +27,7 @@
   body.nav .top,body.nav #idleUI{display:none}
   #navUI{display:none}
   body.nav #navUI{display:block}
-  .panel{position:absolute;z-index:1000;bottom:0;right:0;left:0;background:#fff;border-radius:18px 18px 0 0;
+  .panel{position:absolute;z-index:10;bottom:0;right:0;left:0;background:#fff;border-radius:18px 18px 0 0;
     box-shadow:0 -4px 18px rgba(12,45,58,.22);padding:14px 16px calc(16px + env(safe-area-inset-bottom));max-height:55vh;overflow:auto}
   @media(min-width:700px){.panel{width:380px;right:10px;left:auto;bottom:10px;border-radius:18px}}
   .hint{margin:0 0 10px;font-size:15px;color:var(--muted)}
@@ -40,14 +42,16 @@
   .btns button.main{background:var(--sea);border-color:var(--sea);color:#fff}
   .btns button.go{background:var(--route);border-color:var(--route);color:#fff;font-weight:600;flex-basis:100%;font-size:16px}
   .btns button.stop{background:#b42318;border-color:#b42318;color:#fff;font-weight:600}
+  .btns button.rc{flex-basis:100%;background:var(--sea);border-color:var(--sea);color:#fff}
+  .btns button[hidden]{display:none}
   button:focus-visible{outline:3px solid var(--route);outline-offset:2px}
   ol.steps{list-style:none;margin:12px 0 0;padding:0;display:none}
   ol.steps li{padding:8px 0;border-top:1px solid var(--line);font-size:14px;display:flex;justify-content:space-between;gap:10px}
   ol.steps li span{color:var(--muted);white-space:nowrap}
   .pin{width:26px;height:26px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #fff;box-shadow:0 1px 6px rgba(0,0,0,.4)}
   .pin.a{background:var(--sea)}.pin.b{background:var(--route)}
-  .me{width:30px;height:30px;border-radius:50%;background:#1a73e8;border:3px solid #fff;box-shadow:0 0 0 6px rgba(26,115,232,.25),0 1px 6px rgba(0,0,0,.5);position:relative}
-  .me:after{content:"";position:absolute;top:-12px;left:6px;border:6px solid transparent;border-bottom:10px solid #1a73e8;border-top:0}
+  .me{width:34px;height:34px;border-radius:50%;background:#1a73e8;border:3px solid #fff;box-shadow:0 0 0 7px rgba(26,115,232,.25),0 2px 8px rgba(0,0,0,.5);position:relative}
+  .me:after{content:"";position:absolute;top:-14px;left:5px;border:8px solid transparent;border-bottom:13px solid #1a73e8;border-top:0}
   .err{color:#b42318}
 </style>
 </head>
@@ -81,23 +85,33 @@
       <div><b id="remT">-</b> <span>تا مقصد</span></div>
       <div><b id="spd">۰</b> <span>کیلومتر بر ساعت</span></div>
     </div>
-    <div class="btns"><button class="stop" id="stopBtn" type="button">پایان مسیریابی</button></div>
+    <div class="btns">
+      <button class="rc" id="rcBtn" type="button" hidden>بازگشت به موقعیت من</button>
+      <button class="stop" id="stopBtn" type="button">پایان مسیریابی</button>
+    </div>
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.min.js"
+  onerror="document.getElementById('hint').textContent='نقشه بارگذاری نشد. فیلترشکن را روشن کن و صفحه را رفرش کن.'"></script>
 <script>
-const map = L.map('map', {zoomControl:false}).setView([35.6892, 51.389], 11);
-L.control.zoom({position:'topleft'}).addTo(map);
-L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19, attribution:'© OpenStreetMap'}).addTo(map);
-
 const $ = id => document.getElementById(id);
-let pts = [], markers = [], routeLine = null;
-let R = null, dest = null, navigating = false, watchId = null, meMarker = null, wake = null;
-let routing = false, offCount = 0, lastReroute = 0;
+const map = new maplibregl.Map({
+  container: 'map',
+  center: [51.389, 35.6892], zoom: 11,
+  style: {version: 8,
+    sources: {osm: {type: 'raster', tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'], tileSize: 256, maxzoom: 19, attribution: '© OpenStreetMap'}},
+    layers: [{id: 'osm', type: 'raster', source: 'osm'}]}
+});
+map.addControl(new maplibregl.NavigationControl({showCompass: false}), 'top-left');
+let mapReady = false; map.on('load', () => mapReady = true);
+
+let pts = [], markers = [], R = null, dest = null;
+let navigating = false, watchId = null, meMarker = null, wake = null, follow = true;
+let routing = false, offCount = 0, lastReroute = 0, lastHd = null, lastLL = null;
 
 const fa = n => String(n).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
-const pin = cls => L.divIcon({className:'', html:'<div class="pin '+cls+'"></div>', iconSize:[26,26], iconAnchor:[4,26]});
+function pinEl(cls){ const o = document.createElement('div'); o.innerHTML = '<div class="pin ' + cls + '"></div>'; o.style.width = o.style.height = '26px'; return o; }
 function setHint(t, e){ $('hint').textContent = t; $('hint').className = 'hint' + (e ? ' err' : ''); }
 function fmtDist(m){ return m >= 1000 ? fa((m/1000).toFixed(1)) + ' کیلومتر' : fa(Math.round(m/10)*10) + ' متر'; }
 function fmtTime(s){ const m = Math.max(1, Math.round(s/60)); return m < 60 ? fa(m) + ' دقیقه' : fa(Math.floor(m/60)) + ' ساعت و ' + fa(m%60) + ' دقیقه'; }
@@ -105,6 +119,12 @@ function hav(a, b){
   const r = Math.PI/180, dLat = (b[0]-a[0])*r, dLng = (b[1]-a[1])*r;
   const x = Math.sin(dLat/2)**2 + Math.cos(a[0]*r)*Math.cos(b[0]*r)*Math.sin(dLng/2)**2;
   return 12742000 * Math.asin(Math.sqrt(x));
+}
+function bearing(a, b){
+  const r = Math.PI/180, dl = (b[1]-a[1])*r;
+  const y = Math.sin(dl)*Math.cos(b[0]*r);
+  const x = Math.cos(a[0]*r)*Math.sin(b[0]*r) - Math.sin(a[0]*r)*Math.cos(b[0]*r)*Math.cos(dl);
+  return (Math.atan2(y, x)/r + 360) % 360;
 }
 
 const turnFa = {'left':'به چپ بپیچید','right':'به راست بپیچید','slight left':'کمی به چپ بپیچید','slight right':'کمی به راست بپیچید',
@@ -120,14 +140,14 @@ function stepText(s){
 function addPoint(ll){
   if(pts.length >= 2) resetAll();
   pts.push(ll);
-  markers.push(L.marker(ll, {icon: pin(pts.length === 1 ? 'a' : 'b')}).addTo(map));
+  markers.push(new maplibregl.Marker({element: pinEl(pts.length === 1 ? 'a' : 'b'), anchor: 'bottom'}).setLngLat([ll.lng, ll.lat]).addTo(map));
   if(pts.length === 1) setHint('مبدأ ثبت شد. حالا مقصد را انتخاب کن. (یا برای مسیریابی از موقعیت فعلی، «شروع مسیریابی» را بزن.)');
   else { setHint('در حال پیدا کردن مسیر...'); previewRoute(); }
 }
+function clearRoute(){ const s = map.getSource('route'); if(s) s.setData({type:'FeatureCollection', features:[]}); }
 function resetAll(){
-  pts = []; markers.forEach(m => map.removeLayer(m)); markers = [];
-  if(routeLine){ map.removeLayer(routeLine); routeLine = null; }
-  R = null; $('sum').style.display = 'none'; $('steps').style.display = 'none'; $('steps').innerHTML = '';
+  pts = []; markers.forEach(m => m.remove()); markers = [];
+  clearRoute(); R = null; $('sum').style.display = 'none'; $('steps').style.display = 'none'; $('steps').innerHTML = '';
   setHint('روی نقشه بزن یا آدرس جستجو کن تا مبدأ مشخص شود.');
 }
 
@@ -144,14 +164,23 @@ async function fetchRoute(a, b){
   return {coords, cum, steps, ends, dist: r.distance, dur: r.duration};
 }
 function drawRoute(){
-  if(routeLine) map.removeLayer(routeLine);
-  routeLine = L.polyline(R.coords, {color:'#e8590c', weight:6, opacity:.9}).addTo(map);
+  const gj = {type:'Feature', geometry:{type:'LineString', coordinates: R.coords.map(c => [c[1], c[0]])}};
+  const put = () => {
+    if(map.getSource('route')){ map.getSource('route').setData(gj); return; }
+    map.addSource('route', {type:'geojson', data: gj});
+    map.addLayer({id:'route-casing', type:'line', source:'route', layout:{'line-join':'round','line-cap':'round'}, paint:{'line-color':'#ffffff','line-width':11}});
+    map.addLayer({id:'route', type:'line', source:'route', layout:{'line-join':'round','line-cap':'round'}, paint:{'line-color':'#e8590c','line-width':7}});
+  };
+  mapReady ? put() : map.once('load', put);
 }
 
 async function previewRoute(){
   try{
     R = await fetchRoute([pts[0].lat, pts[0].lng], [pts[1].lat, pts[1].lng]);
-    drawRoute(); map.fitBounds(routeLine.getBounds(), {padding:[60,60]});
+    drawRoute();
+    const b = new maplibregl.LngLatBounds();
+    R.coords.forEach(c => b.extend([c[1], c[0]]));
+    map.fitBounds(b, {padding: 70, pitch: 0, bearing: 0});
     $('dist').textContent = fmtDist(R.dist); $('time').textContent = fmtTime(R.dur); $('sum').style.display = 'flex';
     setHint('مسیر آماده است. برای راهنمای زنده «شروع مسیریابی» را بزن.');
     $('steps').innerHTML = R.steps.map(s => `<li>${stepText(s)}<span>${fmtDist(s.distance)}</span></li>`).join('');
@@ -160,26 +189,31 @@ async function previewRoute(){
 }
 
 /* ---------- مسیریابی زنده ---------- */
-async function requestWake(){
-  try{ if('wakeLock' in navigator) wake = await navigator.wakeLock.request('screen'); }catch(e){}
+function camera(ll, hd, dur){
+  map.easeTo({center: [ll[1], ll[0]], bearing: hd || 0, pitch: 55, zoom: 17,
+    padding: {top: Math.round(innerHeight * 0.25), bottom: 0, left: 0, right: 0}, duration: dur, easing: t => t});
 }
+async function requestWake(){ try{ if('wakeLock' in navigator) wake = await navigator.wakeLock.request('screen'); }catch(e){} }
+
 function startNav(){
   if(!pts.length){ setHint('اول مقصد را روی نقشه انتخاب کن یا جستجو کن.', true); return; }
   if(!navigator.geolocation){ setHint('مرورگر شما موقعیت‌یابی را پشتیبانی نمی‌کند.', true); return; }
   const last = pts[pts.length-1];
   dest = [last.lat, last.lng];
-  navigating = true; R = null; offCount = 0;
+  navigating = true; follow = true; R = null; offCount = 0; lastHd = null; lastLL = null;
+  $('rcBtn').hidden = true;
   document.body.classList.add('nav');
   $('navD').textContent = '...'; $('navT').textContent = 'در حال پیدا کردن موقعیت';
   requestWake();
-  watchId = navigator.geolocation.watchPosition(onFix, onErr, {enableHighAccuracy:true, maximumAge:1000, timeout:20000});
+  watchId = navigator.geolocation.watchPosition(onFix, onErr, {enableHighAccuracy: true, maximumAge: 1000, timeout: 20000});
 }
 function stopNav(){
   navigating = false;
   if(watchId !== null){ navigator.geolocation.clearWatch(watchId); watchId = null; }
   if(wake){ try{ wake.release(); }catch(e){} wake = null; }
-  if(meMarker){ map.removeLayer(meMarker); meMarker = null; }
+  if(meMarker){ meMarker.remove(); meMarker = null; }
   document.body.classList.remove('nav');
+  map.easeTo({pitch: 0, bearing: 0, padding: {top: 0, bottom: 0, left: 0, right: 0}, duration: 700});
 }
 function onErr(){
   $('navD').textContent = 'موقعیت پیدا نشد';
@@ -187,8 +221,10 @@ function onErr(){
 }
 async function buildNavRoute(from){
   routing = true;
-  try{ R = await fetchRoute(from, dest); drawRoute(); lastReroute = Date.now(); }
-  catch(e){ $('navT').textContent = 'مسیر پیدا نشد. اینترنت را بررسی کن.'; }
+  try{
+    R = await fetchRoute(from, dest); drawRoute(); lastReroute = Date.now();
+    if(lastHd === null) lastHd = bearing(R.coords[0], R.coords[Math.min(10, R.coords.length-1)]);
+  }catch(e){ $('navT').textContent = 'مسیر پیدا نشد. اینترنت را بررسی کن.'; }
   routing = false;
 }
 function snap(ll){
@@ -202,12 +238,21 @@ function snap(ll){
 function onFix(p){
   if(!navigating) return;
   const ll = [p.coords.latitude, p.coords.longitude];
-  if(!meMarker) meMarker = L.marker(ll, {icon: L.divIcon({className:'', html:'<div class="me"></div>', iconSize:[30,30], iconAnchor:[15,15]}), zIndexOffset:1000}).addTo(map);
-  meMarker.setLatLng(ll);
-  const h = p.coords.heading;
-  if(h !== null && !isNaN(h) && meMarker.getElement()) meMarker.getElement().firstChild.style.transform = `rotate(${h}deg)`;
-  map.setView(ll, Math.max(map.getZoom(), 16), {animate:true});
-  $('spd').textContent = fa(Math.round((p.coords.speed || 0) * 3.6));
+  if(!meMarker){
+    const el = document.createElement('div'); el.innerHTML = '<div class="me"></div>'; el.style.width = el.style.height = '34px';
+    meMarker = new maplibregl.Marker({element: el, anchor: 'center'}).setLngLat([ll[1], ll[0]]).addTo(map);
+  } else meMarker.setLngLat([ll[1], ll[0]]);
+
+  const speed = p.coords.speed;
+  let hd = p.coords.heading;
+  if(hd === null || isNaN(hd) || (speed !== null && speed < 1)){
+    hd = lastHd;
+    if(lastLL && hav(lastLL, ll) > 6){ hd = bearing(lastLL, ll); }
+  }
+  if(!lastLL || hav(lastLL, ll) > 6) lastLL = ll;
+  if(hd !== null) lastHd = hd;
+  $('spd').textContent = fa(Math.round((speed || 0) * 3.6));
+  if(follow) camera(ll, lastHd, 900);
 
   if(hav(ll, dest) < 30){
     $('navD').textContent = 'به مقصد رسیدید 🎉'; $('navT').textContent = '';
@@ -229,13 +274,15 @@ function onFix(p){
 
   let k = R.ends.findIndex(e => e > progress);
   if(k < 0) k = R.ends.length - 1;
-  const next = R.steps[k+1];
-  const toTurn = Math.max(0, R.ends[k] - progress);
+  const next = R.steps[k+1], toTurn = Math.max(0, R.ends[k] - progress);
   if(next){ $('navD').textContent = fmtDist(toTurn); $('navT').textContent = stepText(next); }
   else { $('navD').textContent = fmtDist(remain); $('navT').textContent = 'تا مقصد مستقیم ادامه دهید'; }
 }
 
-map.on('click', e => { if(!navigating) addPoint(e.latlng); });
+map.on('dragstart', e => { if(navigating && e.originalEvent){ follow = false; $('rcBtn').hidden = false; } });
+$('rcBtn').onclick = () => { follow = true; $('rcBtn').hidden = true; if(lastLL) camera(lastLL, lastHd, 600); };
+
+map.on('click', e => { if(!navigating) addPoint(e.lngLat); });
 $('resetBtn').onclick = resetAll;
 $('goBtn').onclick = startNav;
 $('stopBtn').onclick = stopNav;
@@ -244,10 +291,10 @@ $('locBtn').onclick = () => {
   if(!navigator.geolocation){ setHint('مرورگر شما موقعیت‌یابی را پشتیبانی نمی‌کند.', true); return; }
   setHint('در حال پیدا کردن موقعیت شما...');
   navigator.geolocation.getCurrentPosition(p => {
-    const ll = L.latLng(p.coords.latitude, p.coords.longitude);
     if(pts.length >= 2) resetAll();
-    map.setView(ll, 15); addPoint(ll);
-  }, () => setHint('اجازه‌ی موقعیت داده نشد. در تنظیمات مرورگر اجازه را فعال کن.', true), {enableHighAccuracy:true, timeout:15000});
+    map.easeTo({center: [p.coords.longitude, p.coords.latitude], zoom: 15});
+    addPoint({lat: p.coords.latitude, lng: p.coords.longitude});
+  }, () => setHint('اجازه‌ی موقعیت داده نشد. در تنظیمات مرورگر اجازه را فعال کن.', true), {enableHighAccuracy: true, timeout: 15000});
 };
 
 $('searchForm').onsubmit = async e => {
@@ -257,8 +304,8 @@ $('searchForm').onsubmit = async e => {
   try{
     const d = await (await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=fa&q=' + encodeURIComponent(q))).json();
     if(!d.length){ setHint('جایی با این نام پیدا نشد. عبارت دیگری امتحان کن.', true); return; }
-    const ll = L.latLng(+d[0].lat, +d[0].lon);
-    map.setView(ll, 15); addPoint(ll);
+    map.easeTo({center: [+d[0].lon, +d[0].lat], zoom: 15});
+    addPoint({lat: +d[0].lat, lng: +d[0].lon});
   }catch(err){ setHint('جستجو انجام نشد. اینترنت یا فیلترشکن را بررسی کن.', true); }
 };
 </script>
